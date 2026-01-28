@@ -1,0 +1,170 @@
+---
+title: "Lab 10- Logistic Regression"
+author: "Lorena Saquicoray Pozuelo"
+format: html
+editor: visual
+---
+
+```{r}
+# Load necessary packages
+library(tidyverse)
+library(ggthemes)
+library(gt)
+library(corrr)
+library(ggfortify)
+library(broom)
+library(scales)
+library(car)
+library(gtsummary)
+
+# Setting default ggplot2 theme
+theme_set(ggthemes::theme_few())
+
+# Load function for visualizing 
+source("https://raw.githubusercontent.com/dilernia/DSA220/main/Functions/vif_plot.R")
+
+# Load function for creating empirical logit plot
+source("https://raw.githubusercontent.com/dilernia/DSA220/refs/heads/main/Functions/empirical_logit_plot.R")
+
+# Importing presidential election data from course GitHub page
+elections <- read_csv("https://raw.githubusercontent.com/dilernia/DSA220/main/Data/presidential_census.csv") |>
+mutate(
+median_income_thousands = median_income / 1000,
+population_millions = population / 1000000,
+winner = factor(winner, levels = c("Republican", "Democrat"))
+) |>
+select(year, state, population_millions, median_income_thousands, majority_female, winner)
+```
+
+The code above loads the required packages and imports the presidential_census.csv dataset from the course GitHub. The variables used in this lab are:
+
+-   year — election year (2008, 2012, 2016)
+
+-   state — state name
+
+-   population_millions — population in millions
+
+-   median_income_thousands — median household income in thousands
+
+-   majority_female — logical/indicator variable (TRUE/FALSE)
+
+-   winner — factor with levels Republican, Democrat.
+
+**2. Logistic regression model**
+
+We fit a logistic regression predicting winner (Democrat vs Republican) using majority_female and median_income_thousands:
+
+```{r}
+# Logistic regression model
+model_logit <- glm(
+  winner ~ majority_female + median_income_thousands,
+  data = elections,
+  family = binomial
+)
+
+# Table with intercept included + VIF
+tbl_regression(
+  model_logit,
+  intercept = TRUE,                
+  exponentiate = FALSE,
+  estimate_fun = function(x) style_number(x, digits = 2)
+) %>%
+  add_vif() %>%
+  add_glance_source_note()
+```
+
+**Interpretation:**
+
+-   The intercept represents the log-odds of a Democrat winning when majority_female = FALSE and median_income_thousands = 0.
+
+-   Majority_female slope (1.94): A state with a majority female population increases the log-odds of a Democrat winning by 1.94, holding median income constant.
+
+-   Median_income slope (0.17): For every \$1,000 increase in median income, the log-odds of a Democrat winning increases by 0.17, holding majority_female constant.
+
+-   VIF values (\~1.3) indicate low multicollinearity (assumption met). Emperical logic plots.
+
+**3. Empirical logit plots and model assumptions:**
+
+We create empirical logit plots for each predictor (with nbins = 4) to inspect the linearity-of-the-logit assumption.
+
+```{r}
+# Empirical logit plot for median_income_thousands
+emp_plots <- empirical_logit_plot(model_logit, nbins = 4)
+
+# Empirical logit plot for median income
+emp_plots[[1]]
+
+# Empirical logit plot for majority_female
+emp_plots[[2]]
+
+```
+
+**Answers (assumptions):**
+
+<u>- Linearity of the logit:</u> The empirical logit plot for median_income_thousands shows an approximately linear relationship between the binned median income and the empirical log-odds of a Democrat win. The binary predictor majority_female naturally produces two point estimates (one for FALSE and one for TRUE). Based on these plots, the linearity-in-the-logit assumption appears right for median_income_thousands.
+
+<u>- Multicollinearity:</u> The VIF values from the model output are around 1.3 for both predictors. Since VIF values well below 5 (and \~1–2) indicate low multicollinearity, the assumption of no significant multicollinearity is met.
+
+**4. Interpretation of slopes:**
+
+From the model output we have the following estimated log-odds coefficients (rounded in the table):
+
+Intercept: (interpreted below)
+
+majority_female (TRUE): log(OR) ≈ 1.94
+
+median_income_thousands: log(OR) ≈ 0.17
+
+<u>- Majority_female slope (indicator)</u>
+
+Value: log-odds increase ≈ 1.94 when majority_female = TRUE (compared to FALSE), holding median income constant.
+
+Interpretation with context: Holding median income constant, a state with a majority female population has an estimated log-odds of voting Democrat that are 1.94 units higher than a state that is not majority female.
+
+Odds form: exp(1.94) ≈ 6.96. So the estimated odds of a Democrat winning are about 6.96 times higher in majority-female states compared to non-majority-female states, controlling for median income.
+
+<u>- Median_income_thousands slope</u>
+
+Value: log-odds increase ≈ 0.17 per one unit increase in median_income_thousands (i.e., per \$1,000).
+
+Interpretation with context: Holding majority_female constant, for every additional \$1,000 in median household income, the estimated log-odds of a Democrat winning increase by 0.17.
+
+Odds form: exp(0.17) ≈ 1.19. So each additional \$1,000 in median income corresponds to about a 19% increase in the odds of a Democrat winning, holding majority_female constant.
+
+**5. Predicted log-odds, odds, and probabilites:**
+
+We compute predictions for a state with:
+
+majority_female = TRUE
+
+median_income_thousands = 50 (e., median income = \$50,000)
+
+```{r}
+new_state <- tibble(
+majority_female = TRUE,
+median_income_thousands = 50
+)
+
+# Estimated log-odds
+log_odds <- predict(model_logit, newdata = new_state)
+log_odds
+# Estimated odds
+odds <- exp(log_odds)
+odds
+
+# Estimated probability
+prob <- predict(model_logit, newdata = new_state, type = "response")
+prob
+```
+
+**Interpretation:** Estimated log-odds: -0.207 (approx)
+
+Estimated odds: 0.813 (approx)
+
+Estimated probability: 0.448 (approx)
+
+The predicted log-odds of a Democrat winning in a majority-female state with median income \$50k is about -0.207.
+
+This corresponds to predicted odds ≈ 0.813 : 1, so the odds are less than 1 (i.e., the Republican is slightly favored in odds terms under this particular combination).
+
+The predicted probability of a Democrat winning under these conditions is approximately 0.448, or 44.8%.

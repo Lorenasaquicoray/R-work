@@ -1,0 +1,128 @@
+---
+title: "Introduction to ggplot2"
+author: "Lorena Saquicoray"
+format: html
+editor: visual
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, error = TRUE)
+
+```
+
+
+```{r}
+library(palmerpenguins)
+library(tidyverse)
+library(skimr)
+library(knitr)
+
+
+data(penguins, package = "palmerpenguins")
+
+glimpse(penguins)
+```
+## Blank canvas using penguins data. 
+
+```{r}
+ggplot(data = penguins
+)
+```
+
+## New map bill depth to x-axis
+
+```{r}
+ggplot(data = penguins, 
+       mapping = aes(x = bill_depth_mm))
+```
+
+## New map adding bill lenght to y-axis
+
+```{r}
+ggplot(data = penguins, 
+       mapping = aes(x = bill_depth_mm, y = bill_length_mm))
+```
+
+## Scatterplot 2 dimensional with a point layer. 
+```{r}
+ggplot(data = penguins, 
+       mapping = aes(x = bill_depth_mm, y = bill_length_mm))+
+geom_point()
+```
+## Title, subtitle of the plot and, title of the axis. 
+```{r}
+ggplot(data = penguins, 
+       mapping = aes(x = bill_depth_mm, y = bill_length_mm, 
+color = species))+
+geom_point()+
+labs(title ="Penguin bill length by depth", subtitle = "Dimensions for Adelie, Chinstrap, and Gentoo penguins", x = "Bill depth (mm)", y = "Bill length (mm)")
+```
+
+We update the title of the legend.
+```{r}
+ggplot(data = penguins, 
+       mapping = aes(x = bill_depth_mm, y = bill_length_mm, 
+color = species))+
+  
+geom_point()+
+labs(title ="Penguin bill length by depth", subtitle = "Dimensions for Adelie, Chinstrap, and Gentoo penguins", x = "Bill depth (mm)", y = "Bill length (mm)", color = "Species")
+```
+## Change the colors 
+```{r}
+ggplot(data = penguins, 
+       mapping = aes(x = bill_depth_mm, y = bill_length_mm, 
+color = species))+
+geom_point()+
+labs(title ="Penguin bill length by depth", subtitle = "Dimensions for Adelie, Chinstrap, and Gentoo penguins", x = "Bill depth (mm)", y = "Bill length (mm)", color = "Species")+ scale_color_viridis_d()
+```
+
+## Mapping flipper_length to the alpha asthetic.
+
+```{r}
+ggplot(data = penguins, 
+       mapping = aes(x = bill_depth_mm, y = bill_length_mm, size = body_mass_g, alpha = flipper_length_mm))+
+geom_point()
+```
+## Plot setting alpha aesthetic to be 0.50
+```{r}
+ggplot(data = penguins, 
+       mapping = aes(x = bill_depth_mm, y = bill_length_mm))+
+  geom_point(size =2, alpha = 0.50)
+
+```
+
+
+```{r}
+ggplot(data = penguins)
+
+skim(penguins)
+
+```
+
+## Histogram of penguin body masses 
+```{r}
+ggplot(data = penguins, 
+       mapping = aes(x = body_mass_g))+
+  geom_histogram(bins = 30, fill = "grey50", color= "white")+
+  labs(title = "Penguin body masses", y = "Frequency", x= "Body mass (g)", caption= "Source: Palmer Station LTER/palmerpenguins package")
+```
+
+## box plot of body masses
+
+```{r}
+ggplot(data = penguins, 
+     mapping = aes(x = body_mass_g, y = species, color = species))+
+  geom_boxplot()+
+  theme(
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank()
+    )+
+
+labs(
+  title = "Penguin body masses", 
+  x = "Body mass (g)", 
+  y = "", color ="Species",
+  caption = "Source: Palmer Station LTER/palmerpenguins package")
+  
+```
+

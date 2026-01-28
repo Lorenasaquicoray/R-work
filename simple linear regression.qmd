@@ -1,0 +1,156 @@
+---
+title: "R LAB: Simple Linear Regression"
+subtitle: "DSA 220 - Introduction to Data Science and Analytics"
+format: html
+editor: visual
+---
+
+### 1
+
+```{r}
+library(dplyr) 
+library(tidyverse) 
+library(ggthemes) 
+library(gt) 
+library(corrr)
+
+theme_set(ggthemes::theme_few())
+```
+
+For this assignment, we will analyze data containing estimates from the United States American Community Survey (ACS) at the state level for the years 2008 through 2023 based on an annual sample size of approximately 3.5 million addresses including data on population, income, poverty rates, and demographic characteristics.
+
+```{r}
+# Importing state-level U.S. ACS data for 2021
+census_data <- read_csv("https://raw.githubusercontent.com/dilernia/STA418-518/main/Data/census_data_2008-2021.csv") |> 
+  dplyr::filter(!stringr::str_detect(county_state, pattern = ","), year == 2021) |> 
+  dplyr::mutate(perc_poverty = 100*prop_poverty,
+                median_income_thousand = median_income / 1000)
+```
+
+### 2. Scatter plot with the best fit showing the percent of people in poverty by the median income in thousand of dollars for each state
+
+```{r}
+ggplot(census_data, aes(x = median_income_thousand, y = perc_poverty)) +
+  geom_point(color = "black") +                    
+  geom_smooth(method = "lm", color = "blue", se = FALSE) +  
+  labs(
+    x = "median incomethousand",
+    y = "perc poverty"
+  ) +
+  theme_minimal()
+```
+
+### 3. Simple linear regression model with median income in thousand of dollars as the predicotr variable and percent poverty as the response variable.
+
+```{r}
+
+model <- lm(perc_poverty ~ median_income_thousand, data = census_data)
+
+summary(model)
+
+```
+
+### 4. We fit a simple linear regression model and display the output table
+
+```{r}
+slr_model <- lm(perc_poverty ~ median_income_thousand,
+                data = census_data)
+
+slr_model |> 
+  broom::tidy() |> 
+  gt() |> 
+  fmt_number(columns = estimate:statistic, decimals = 2) |> 
+  fmt_scientific(columns = p.value, decimals = 6)
+
+```
+
+### 5 Estimated regression equation based on the output
+
+```{r}
+broom::tidy(slr_model)
+
+```
+
+### 6 Value and interpreting the slope.
+
+**Slope estimates: -0.276** from the median income thousand. Interpretation in context is that the slope tells us the expected change in the poverty rate for each \$1,000 increase in median income.
+
+For every \$1,000 increase in a state’s median income, the percent of people in poverty decreases by approximately 0.28 percentage points, on average, holding all else constant.
+
+**Key point: The negative sign indicates an inverse relationship;higher income is associated with lower poverty.**
+
+### 7 Value of the intercept and if its innapropiate or not
+
+**Intercept estimate: 32.03** from (Intercept)
+
+Interpretation in context is that the intercept represents the estimated percent of people in poverty when the median income is \$0.
+
+This is **not appropriate in this context**, because a median income of \$0 is unrealistic for a U.S. state. The intercept here is an extrapolation outside the range of observed data, so it doesn’t have a meaningful real-world interpretation.
+
+### 8
+
+```{r}
+# Default diagnostic plots
+par(mfrow = c(2, 2))  # show 4 plots together
+plot(slr_model)
+par(mfrow = c(1, 1))  # reset
+
+# Histogram of residuals
+hist(residuals(slr_model),
+     main = "Histogram of Residuals",
+     xlab = "Residuals",
+     col = "lightblue",
+     border = "black")
+
+# Cook's distance plot
+plot(cooks.distance(slr_model), 
+     type = "h",
+     main = "Cook's Distance",
+     ylab = "Cook's distance")
+abline(h = 4/length(census_data$perc_poverty), col = "red", lty = 2)
+
+```
+
+### 9 Analysis of the outputs
+
+The four assumptions for the simple linear regression are: - linearity: The scatter of residuals around the fitted values suggests the relationship between median income and percent poverty is approximately linear, though slight curvature appears at higher incomes.
+
+-Independence: Since the data are collected at the state level and each state is treated as a separate observation, the independence assumption is considered reasonable.
+
+-   Normality: The Q-Q plot and histogram indicate that residuals deviate from normality, with noticeable skewness and heavy tails.
+
+-Homoscedasticity: The Scale-Location plot shows that residual spread increases with fitted values, suggesting some heteroscedasticity and a potential violation of the constant variance assumption.\n
+
+### 10 Influential points
+
+Influential points are identified using Cook’s distance and the Residuals vs Leverage plot. In this model, state **52 stands out** with a Cook’s distance value well above the red cutoff line, indicating it has a strong influence on the fitted regression line. Another state, such as observation 9, also appears closer to the boundary, but not as extreme as 52. Therefore, there is clear evidence of at least one influential point in the data that may affect the stability of the regression estimates.
+
+### 11 Outliers
+
+Outliers can be detected by examining standardized residuals and the Q-Q plot. In this model, observation 52 shows a residual far above the expected range, and observation 9 also departs noticeably from the fitted line. Since standardized residuals greater than ±3 are considered outliers, these two cases provide evidence of outliers in the data that do not follow the general trend between median income and poverty.
+
+### 12 Hypthesis with different situations
+
+For this regression, the null hypothesis states that the slope of the regression line is equal to zero, meaning there is no linear relationship between median income and percent poverty. The alternative hypothesis states that the slope is not equal to zero, indicating that a linear relationship does exist between these two variables.
+
+### 13 Values and decision for the hypothesis test
+
+As we can see in this output:
+
+```{r}
+slr_model <- lm(perc_poverty ~ median_income_thousand,
+                data = census_data)
+
+slr_model |> 
+  broom::tidy() |> 
+  gt() |> 
+  fmt_number(columns = estimate:statistic, decimals = 2) |> 
+  fmt_scientific(columns = p.value, decimals = 6)
+
+```
+
+The regression output gives a **test statistic of –8.34** with a corresponding **p-value of 4.98 × 10⁻¹¹**. Since the p-value is far below the common significance level of 0.05, we reject the null hypothesis and conclude that the slope is significantly different from zero.
+
+### 14 Hypothesis results
+
+The hypothesis test provides strong evidence of a negative relationship between median income and percent poverty. Specifically, the results suggest that for every \$1,000 increase in a state’s median income, the poverty rate decreases on average by about **0.28 percentage points**. This indicates that higher median income is significantly associated with lower poverty levels across states.
