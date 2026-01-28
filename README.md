@@ -1,4 +1,10 @@
 # R-work
+![R](https://img.shields.io/badge/Language-R-276DC3?style=flat-square&logo=r)
+![Pandas](https://img.shields.io/badge/Library-Pandas-150458?style=flat-square&logo=pandas&logoColor=white)
+![Matplotlib](https://img.shields.io/badge/Library-Matplotlib-orange?style=flat-square)
+![ggplot2](https://img.shields.io/badge/Library-ggplot2-F05C55?style=flat-square&logo=r)
+![Tidyverse](https://img.shields.io/badge/Collection-Tidyverse-276DC3?style=flat-square&logo=tidyverse&logoColor=white)
+
 📊 Mini Data Analysis & Visualization Projects
 A collection of small, hands‑on projects created to practice data exploration, cleaning, and visualization. Each project uses real datasets and applies tools from both **R and Python** to build clear, insightful graphics and strengthen **analytical thinking**.
 
